@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VLESS Key Fetcher</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>VLESS <span>Key Fetcher</span></h1>
+      <p class="subtitle">Fetches the latest key from vpn-keys.ru</p>
+    </header>
+
+    <div class="card">
+      <div class="card-label">Latest VLESS Key</div>
+      <div class="key-box placeholder" id="keyBox">Press "Fetch Key" to load the latest key.</div>
+      <div class="actions">
+        <button class="btn btn-primary" id="fetchBtn" onclick="fetchKey()">Fetch Key</button>
+        <button class="btn btn-copy" id="copyBtn" onclick="copyKey()" disabled>Copy</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <footer>
+      <p>Powered by a Cloudflare Worker · No extensions required</p>
+    </footer>
+  </div>
+
+  <script>
+    const WORKER_URL = "/api";
+
+    let currentKey = "";
+
+    async function fetchKey() {
+      const keyBox = document.getElementById("keyBox");
+      const fetchBtn = document.getElementById("fetchBtn");
+      const copyBtn = document.getElementById("copyBtn");
+      const status = document.getElementById("status");
+
+      fetchBtn.disabled = true;
+      fetchBtn.textContent = "Fetching…";
+      keyBox.className = "key-box placeholder";
+      keyBox.textContent = "Loading…";
+      status.textContent = "";
+      status.className = "status";
+      copyBtn.disabled = true;
+      currentKey = "";
+
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+
+        let res;
+        try {
+          res = await fetch(WORKER_URL, { signal: controller.signal });
+        } catch (fetchErr) {
+          const msg = fetchErr.name === "AbortError"
+            ? "Request timed out (10s). The worker may be unreachable on this network — try a different network or VPN."
+            : `Fetch failed: ${fetchErr.message}. This may be a network/firewall issue blocking workers.dev.`;
+          keyBox.className = "key-box error-state";
+          keyBox.textContent = msg;
+          setStatus("error", fetchErr.name === "AbortError" ? "Timed out." : fetchErr.message);
+          return;
+        } finally {
+          clearTimeout(timeout);
+        }
+
+        const rawText = await res.text();
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          keyBox.className = 'key-box error-state';
+          keyBox.textContent = 'API returned (HTTP ' + res.status + '):\n\n' + rawText.slice(0, 400);
+          setStatus('error', 'HTTP ' + res.status + ' — not JSON');
+          return;
+        }
+
+        if (data.error) {
+          keyBox.className = "key-box error-state";
+          keyBox.textContent = "Error: " + data.error;
+          setStatus("error", "Could not retrieve a key.");
+        } else {
+          currentKey = data.key;
+          keyBox.className = "key-box";
+          keyBox.textContent = currentKey;
+          copyBtn.disabled = false;
+          setStatus("success", "Key loaded successfully.");
+        }
+      } catch (err) {
+        keyBox.className = "key-box error-state";
+        keyBox.textContent = "Unexpected error: " + err.message;
+        setStatus("error", err.message);
+      } finally {
+        fetchBtn.disabled = false;
+        fetchBtn.textContent = "Fetch Key";
+      }
+    }
+
+    async function copyKey() {
+      if (!currentKey) return;
+      const copyBtn = document.getElementById("copyBtn");
+      try {
+        await navigator.clipboard.writeText(currentKey);
+        copyBtn.textContent = "Copied!";
+        copyBtn.classList.add("copied");
+        setTimeout(() => {
+          copyBtn.textContent = "Copy";
+          copyBtn.classList.remove("copied");
+        }, 2000);
+      } catch {
+        // Fallback for older browsers
+        const ta = document.createElement("textarea");
+        ta.value = currentKey;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
+      }
+    }
+
+    function setStatus(type, msg) {
+      const status = document.getElementById("status");
+      status.textContent = msg;
+      status.className = "status " + type;
+    }
+  </script>
+</body>
+</html>
