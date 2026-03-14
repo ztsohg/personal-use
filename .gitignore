@@ -6,8 +6,7 @@ _site/
 .sass-cache/
 .jekyll-cache/
 .jekyll-metadata
-index.html
-style.css
+Icon.png
 
 # Additional Ruby/bundler ignore for when you run: bundle install
 /vendor
