@@ -29,6 +29,34 @@ body {
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(120deg, #4f8ef7 0%, #3ecf8e 50%, #0d0d0f 100%);
+  opacity: 0.18;
+  animation: bg-move 12s ease-in-out infinite alternate;
+}
+
+@keyframes bg-move {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Ensure main content is above the animated background */
+.container {
+  position: relative;
+  z-index: 1;
 }
 
 .container {
