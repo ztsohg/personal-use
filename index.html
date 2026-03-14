@@ -88,7 +88,7 @@
           keyBox.className = "key-box";
           keyBox.textContent = currentKey;
           copyBtn.disabled = false;
-          setStatus("success", "Key loaded successfully.");
+          setStatus("success", "Ключ найден успешно.");
         }
       } catch (err) {
         keyBox.className = "key-box error-state";
@@ -96,7 +96,7 @@
         setStatus("error", err.message);
       } finally {
         fetchBtn.disabled = false;
-        fetchBtn.textContent = "Fetch Key";
+        fetchBtn.textContent = "Найти Ключ";
       }
     }
 
@@ -105,10 +105,10 @@
       const copyBtn = document.getElementById("copyBtn");
       try {
         await navigator.clipboard.writeText(currentKey);
-        copyBtn.textContent = "Copied!";
+        copyBtn.textContent = "Скопировано!";
         copyBtn.classList.add("copied");
         setTimeout(() => {
-          copyBtn.textContent = "Copy";
+          copyBtn.textContent = "Скопировать";
           copyBtn.classList.remove("copied");
         }, 2000);
       } catch {
@@ -121,7 +121,7 @@
         ta.select();
         document.execCommand("copy");
         document.body.removeChild(ta);
-        copyBtn.textContent = "Copied!";
+        copyBtn.textContent = "Скопировано!";
         setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
       }
     }
