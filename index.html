@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VLESS Key Fetcher</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>VLESS <span>Key Fetcher</span></h1>
+      <p class="subtitle">Fetches the latest key from vpn-keys.ru</p>
+    </header>
+
+    <div class="card">
+      <div class="card-label">Latest VLESS Key</div>
+      <div class="key-box placeholder" id="keyBox">Press "Fetch Key" to load the latest key.</div>
+      <div class="actions">
+        <button class="btn btn-primary" id="fetchBtn" onclick="fetchKey()">Fetch Key</button>
+        <button class="btn btn-copy" id="copyBtn" onclick="copyKey()" disabled>Copy</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <footer>
+      <p>Powered by a Cloudflare Worker · No extensions required</p>
+    </footer>
+  </div>
+
+  <script>
+    const WORKER_URL = "https://proud-band-ed0b.senka090710.workers.dev/";
+
+    let currentKey = "";
+
+    async function fetchKey() {
+      const keyBox = document.getElementById("keyBox");
+      const fetchBtn = document.getElementById("fetchBtn");
+      const copyBtn = document.getElementById("copyBtn");
+      const status = document.getElementById("status");
+
+      fetchBtn.disabled = true;
+      fetchBtn.textContent = "Fetching…";
+      keyBox.className = "key-box placeholder";
+      keyBox.textContent = "Loading…";
+      status.textContent = "";
+      status.className = "status";
+      copyBtn.disabled = true;
+      currentKey = "";
+
+      try {
+        const res = await fetch(WORKER_URL);
+        const data = await res.json();
+
+        if (data.error) {
+          keyBox.className = "key-box error-state";
+          keyBox.textContent = "Error: " + data.error;
+          setStatus("error", "Could not retrieve a key.");
+        } else {
+          currentKey = data.key;
+          keyBox.className = "key-box";
+          keyBox.textContent = currentKey;
+          copyBtn.disabled = false;
+          setStatus("success", "Key loaded successfully.");
+        }
+      } catch (err) {
+        keyBox.className = "key-box error-state";
+        keyBox.textContent = "Network error — is the Worker URL set correctly?";
+        setStatus("error", err.message);
+      } finally {
+        fetchBtn.disabled = false;
+        fetchBtn.textContent = "Fetch Key";
+      }
+    }
+
+    async function copyKey() {
+      if (!currentKey) return;
+      const copyBtn = document.getElementById("copyBtn");
+      try {
+        await navigator.clipboard.writeText(currentKey);
+        copyBtn.textContent = "Copied!";
+        copyBtn.classList.add("copied");
+        setTimeout(() => {
+          copyBtn.textContent = "Copy";
+          copyBtn.classList.remove("copied");
+        }, 2000);
+      } catch {
+        // Fallback for older browsers
+        const ta = document.createElement("textarea");
+        ta.value = currentKey;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        copyBtn.textContent = "Copied!";
+        setTimeout(() => { copyBtn.textContent = "Copy"; }, 2000);
+      }
+    }
+
+    function setStatus(type, msg) {
+      const status = document.getElementById("status");
+      status.textContent = msg;
+      status.className = "status " + type;
+    }
+  </script>
+</body>
+</html>
