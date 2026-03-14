@@ -7,38 +7,45 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
+  <canvas id="bgCanvas"></canvas>
+
   <div class="container">
     <header>
       <div class="header-top">
-        <h1>VLESS <span>Key Fetcher</span></h1>
-        <button class="btn-lang" id="langBtn" onclick="toggleLang()"><span class="lang-active" id="langRu">RU</span><span class="lang-sep">/</span><span id="langEn">EN</span></button>
+        <h1 id="siteTitle"></h1>
+        <button class="btn-lang" id="langBtn" onclick="toggleLang()">
+          <span class="lang-active" id="langRu">RU</span>
+          <span class="lang-sep">/</span>
+          <span id="langEn">EN</span>
+        </button>
       </div>
-      <p class="subtitle" id="subtitle">Получает последний ключ с vpn-keys.ru</p>
+      <p class="subtitle" id="subtitle"></p>
     </header>
 
     <div class="card">
-      <div class="card-label" id="cardLabel">Последний VLESS ключ</div>
-      <div class="key-box placeholder" id="keyBox">Нажмите "Получить ключ" чтобы загрузить последний ключ.</div>
+      <div class="card-label" id="cardLabel"></div>
+      <div class="key-box placeholder" id="keyBox"></div>
       <div class="actions">
-        <button class="btn btn-primary" id="fetchBtn" onclick="fetchKey()">Получить ключ</button>
-        <button class="btn btn-copy" id="copyBtn" onclick="copyKey()" disabled>Копировать</button>
+        <button class="btn btn-primary" id="fetchBtn" onclick="fetchKey()"></button>
+        <button class="btn btn-copy" id="copyBtn" onclick="copyKey()" disabled></button>
       </div>
       <div class="status" id="status"></div>
     </div>
 
     <footer>
-      <p id="footerText">Работает на Deno Deploy · Без VPN и расширений</p>
+      <p id="footerText"></p>
     </footer>
   </div>
 
   <script>
     const WORKER_URL = "https://hard-wasp-53.ztsohg.deno.net";
-
     let currentKey = "";
     let lang = "ru";
 
     const i18n = {
       ru: {
+        title: "VLESS Key Fetcher",
         subtitle: "Получает последний ключ с vpn-keys.ru",
         cardLabel: "Последний VLESS ключ",
         placeholder: 'Нажмите "Получить ключ" чтобы загрузить последний ключ.',
@@ -48,14 +55,14 @@
         copyBtn: "Копировать",
         copied: "Скопировано!",
         success: "Ключ успешно загружен.",
-        errorNoKey: "Ключ не найден на странице.",
         errorRetrieve: "Не удалось получить ключ.",
         footer: "Работает на Deno Deploy · Без VPN и расширений",
-        timeout: "Превышено время ожидания (10с). Сервер недоступен в этой сети — попробуйте другую сеть или VPN.",
+        timeout: "Превышено время ожидания (10с). Сервер недоступен — попробуйте другую сеть или VPN.",
         fetchFail: "Ошибка сети: ",
         notJson: " — не JSON",
       },
       en: {
+        title: "VLESS Key Fetcher",
         subtitle: "Fetches the latest key from vpn-keys.ru",
         cardLabel: "Latest VLESS Key",
         placeholder: 'Press "Fetch Key" to load the latest key.',
@@ -65,41 +72,76 @@
         copyBtn: "Copy",
         copied: "Copied!",
         success: "Key loaded successfully.",
-        errorNoKey: "No vless:// key found on the page.",
         errorRetrieve: "Could not retrieve a key.",
         footer: "Powered by Deno Deploy · No VPN or extensions required",
-        timeout: "Request timed out (10s). Server unreachable on this network — try a different network or VPN.",
+        timeout: "Request timed out (10s). Server unreachable — try a different network or VPN.",
         fetchFail: "Fetch failed: ",
         notJson: " — not JSON",
       }
     };
 
+    /* ── Typewriter ── */
+    function typewrite(el, text, speed, callback, isTitle) {
+      el.textContent = "";
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i < text.length) {
+          i++;
+          if (isTitle) {
+            const plain = "VLESS ";
+            if (i <= plain.length) {
+              el.innerHTML = text.slice(0, i) + '<span class="title-gradient"></span>';
+            } else {
+              el.innerHTML = plain + '<span class="title-gradient">' + text.slice(plain.length, i) + '</span>';
+            }
+          } else {
+            el.textContent = text.slice(0, i);
+          }
+        } else {
+          clearInterval(interval);
+          if (callback) callback();
+        }
+      }, speed);
+    }
+
+    /* ── Lang ── */
     function toggleLang() {
       lang = lang === "ru" ? "en" : "ru";
       document.getElementById("langRu").className = lang === "ru" ? "lang-active" : "";
       document.getElementById("langEn").className = lang === "en" ? "lang-active" : "";
-      applyLang();
+      applyLang(true);
     }
 
-    function applyLang() {
+    function applyLang(animate) {
       const t = i18n[lang];
-      document.getElementById("subtitle").textContent = t.subtitle;
       document.getElementById("cardLabel").textContent = t.cardLabel;
       document.getElementById("footerText").textContent = t.footer;
       document.getElementById("fetchBtn").textContent = t.fetchBtn;
       document.getElementById("copyBtn").textContent = t.copyBtn;
-      // Update placeholder text only if no key is loaded
       if (!currentKey) {
-        const keyBox = document.getElementById("keyBox");
-        if (keyBox.classList.contains("placeholder")) {
-          keyBox.textContent = t.placeholder;
-        }
+        const kb = document.getElementById("keyBox");
+        if (kb.classList.contains("placeholder")) kb.textContent = t.placeholder;
+      }
+      if (animate) {
+        typewrite(document.getElementById("subtitle"), t.subtitle, 22, null, false);
+      } else {
+        document.getElementById("subtitle").textContent = t.subtitle;
       }
     }
 
-    // Apply Russian on load
-    applyLang();
+    window.addEventListener("DOMContentLoaded", () => {
+      const t = i18n[lang];
+      document.getElementById("cardLabel").textContent = t.cardLabel;
+      document.getElementById("footerText").textContent = t.footer;
+      document.getElementById("fetchBtn").textContent = t.fetchBtn;
+      document.getElementById("copyBtn").textContent = t.copyBtn;
+      document.getElementById("keyBox").textContent = t.placeholder;
+      typewrite(document.getElementById("siteTitle"), t.title, 50, () => {
+        setTimeout(() => typewrite(document.getElementById("subtitle"), t.subtitle, 22, null, false), 80);
+      }, true);
+    });
 
+    /* ── Fetch ── */
     async function fetchKey() {
       const t = i18n[lang];
       const keyBox = document.getElementById("keyBox");
@@ -119,14 +161,11 @@
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
-
         let res;
         try {
           res = await fetch(WORKER_URL, { signal: controller.signal });
         } catch (fetchErr) {
-          const msg = fetchErr.name === "AbortError"
-            ? t.timeout
-            : t.fetchFail + fetchErr.message;
+          const msg = fetchErr.name === "AbortError" ? t.timeout : t.fetchFail + fetchErr.message;
           keyBox.className = "key-box error-state";
           keyBox.textContent = msg;
           setStatus("error", fetchErr.name === "AbortError" ? "Timed out." : fetchErr.message);
@@ -137,9 +176,8 @@
 
         const rawText = await res.text();
         let data;
-        try {
-          data = JSON.parse(rawText);
-        } catch {
+        try { data = JSON.parse(rawText); }
+        catch {
           keyBox.className = "key-box error-state";
           keyBox.textContent = "API returned (HTTP " + res.status + "):\n\n" + rawText.slice(0, 400);
           setStatus("error", "HTTP " + res.status + t.notJson);
@@ -153,9 +191,10 @@
         } else {
           currentKey = data.key;
           keyBox.className = "key-box";
-          keyBox.textContent = currentKey;
-          copyBtn.disabled = false;
-          setStatus("success", t.success);
+          typewrite(keyBox, currentKey, 10, () => {
+            copyBtn.disabled = false;
+            setStatus("success", t.success);
+          }, false);
         }
       } catch (err) {
         keyBox.className = "key-box error-state";
@@ -167,37 +206,146 @@
       }
     }
 
+    /* ── Copy ── */
     async function copyKey() {
       if (!currentKey) return;
       const t = i18n[lang];
       const copyBtn = document.getElementById("copyBtn");
       try {
         await navigator.clipboard.writeText(currentKey);
-        copyBtn.textContent = t.copied;
-        copyBtn.classList.add("copied");
-        setTimeout(() => {
-          copyBtn.textContent = t.copyBtn;
-          copyBtn.classList.remove("copied");
-        }, 2000);
       } catch {
         const ta = document.createElement("textarea");
         ta.value = currentKey;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
+        ta.style.cssText = "position:fixed;opacity:0";
         document.body.appendChild(ta);
         ta.select();
         document.execCommand("copy");
         document.body.removeChild(ta);
-        copyBtn.textContent = t.copied;
-        setTimeout(() => { copyBtn.textContent = t.copyBtn; }, 2000);
       }
+      copyBtn.textContent = t.copied;
+      copyBtn.classList.add("copied");
+      setTimeout(() => { copyBtn.textContent = t.copyBtn; copyBtn.classList.remove("copied"); }, 2000);
     }
 
     function setStatus(type, msg) {
-      const status = document.getElementById("status");
-      status.textContent = msg;
-      status.className = "status " + type;
+      const s = document.getElementById("status");
+      s.textContent = msg;
+      s.className = "status " + type;
     }
+
+    /* ══════════════════════════════════
+       Animated canvas background
+       - Drifting grid
+       - Glowing particles with connections
+       - Two slow aurora blobs
+    ══════════════════════════════════ */
+    const canvas = document.getElementById("bgCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    // Aurora blobs
+    const blobs = [
+      { x: 0.2, y: 0.3, r: 0.35, color: "91,143,255", speed: 0.00018, angle: 0 },
+      { x: 0.8, y: 0.7, r: 0.28, color: "168,85,247", speed: 0.00013, angle: Math.PI },
+    ];
+
+    // Particles
+    const particles = Array.from({ length: 55 }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      r: Math.random() * 1.4 + 0.4,
+      vx: (Math.random() - 0.5) * 0.00025,
+      vy: (Math.random() - 0.5) * 0.00025,
+      alpha: Math.random() * 0.45 + 0.12,
+      color: Math.random() > 0.5 ? "91,143,255" : "168,85,247",
+    }));
+
+    // Grid
+    let gridOffset = 0;
+
+    function drawAuroras() {
+      const w = canvas.width, h = canvas.height;
+      blobs.forEach(b => {
+        b.angle += b.speed;
+        const cx = (b.x + Math.sin(b.angle) * 0.12) * w;
+        const cy = (b.y + Math.cos(b.angle * 0.7) * 0.10) * h;
+        const rad = b.r * Math.min(w, h);
+        const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+        g.addColorStop(0, `rgba(${b.color},0.09)`);
+        g.addColorStop(0.5, `rgba(${b.color},0.04)`);
+        g.addColorStop(1, `rgba(${b.color},0)`);
+        ctx.beginPath();
+        ctx.arc(cx, cy, rad, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+      });
+    }
+
+    function drawGrid() {
+      const w = canvas.width, h = canvas.height;
+      const cols = 14, rows = 10;
+      const cellW = w / cols, cellH = h / rows;
+      gridOffset += 0.15;
+      ctx.strokeStyle = "rgba(91,143,255,0.035)";
+      ctx.lineWidth = 1;
+      const dx = gridOffset % cellW;
+      const dy = (gridOffset * 0.55) % cellH;
+      for (let i = -1; i <= cols + 1; i++) {
+        ctx.beginPath(); ctx.moveTo(i * cellW + dx, 0); ctx.lineTo(i * cellW + dx, h); ctx.stroke();
+      }
+      for (let j = -1; j <= rows + 1; j++) {
+        ctx.beginPath(); ctx.moveTo(0, j * cellH + dy); ctx.lineTo(w, j * cellH + dy); ctx.stroke();
+      }
+    }
+
+    function drawParticles() {
+      const w = canvas.width, h = canvas.height;
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
+        if (p.y < 0) p.y = 1; if (p.y > 1) p.y = 0;
+        const px = p.x * w, py = p.y * h;
+        const g = ctx.createRadialGradient(px, py, 0, px, py, p.r * 7);
+        g.addColorStop(0, `rgba(${p.color},${p.alpha})`);
+        g.addColorStop(1, `rgba(${p.color},0)`);
+        ctx.beginPath(); ctx.arc(px, py, p.r * 7, 0, Math.PI * 2);
+        ctx.fillStyle = g; ctx.fill();
+        ctx.beginPath(); ctx.arc(px, py, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${p.color},${p.alpha + 0.25})`; ctx.fill();
+      });
+
+      // Connections
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = (particles[i].x - particles[j].x) * w;
+          const dy = (particles[i].y - particles[j].y) * h;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 110) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x * w, particles[i].y * h);
+            ctx.lineTo(particles[j].x * w, particles[j].y * h);
+            ctx.strokeStyle = `rgba(91,143,255,${(1 - dist / 110) * 0.1})`;
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawAuroras();
+      drawGrid();
+      drawParticles();
+      requestAnimationFrame(animate);
+    }
+    animate();
   </script>
 </body>
 </html>
