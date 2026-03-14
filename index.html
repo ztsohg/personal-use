@@ -12,7 +12,7 @@
     <header>
       <div class="header-top">
         <h1>VLESS <span>Key Fetcher</span></h1>
-        <button class="btn btn-lang" id="langBtn" onclick="toggleLang()">EN</button>
+        <button class="btn-lang" id="langBtn" onclick="toggleLang()"><span class="lang-active" id="langRu">RU</span><span class="lang-sep">/</span><span id="langEn">EN</span></button>
       </div>
       <p class="subtitle" id="subtitle">Получает последний ключ с vpn-keys.ru</p>
     </header>
@@ -77,7 +77,8 @@
 
     function toggleLang() {
       lang = lang === "ru" ? "en" : "ru";
-      document.getElementById("langBtn").textContent = lang === "ru" ? "EN" : "RU";
+      document.getElementById("langRu").className = lang === "ru" ? "lang-active" : "";
+      document.getElementById("langEn").className = lang === "en" ? "lang-active" : "";
       applyLang();
     }
 
