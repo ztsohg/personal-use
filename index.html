@@ -5,14 +5,175 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VLESS Key Fetcher</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="Icon.png">
 </head>
 <body>
-  <div class="bg-shape shape1"></div>
-  <div class="bg-shape shape2"></div>
-  <div class="bg-shape shape3"></div>
-  <div class="bg-shape shape4"></div>
   <div class="container">
+    <header>
+      <div class="header-top">
+        <h1>VLESS <span>Key Fetcher</span></h1>
+        <button class="btn-lang" id="langBtn" onclick="toggleLang()"><span class="lang-active" id="langRu">RU</span><span class="lang-sep">/</span><span id="langEn">EN</span></button>
+      </div>
+      <p class="subtitle" id="subtitle">Получает последний ключ с vpn-keys.ru</p>
+    </header>
+
+    <div class="card">
+      <div class="card-label" id="cardLabel">Последний VLESS ключ</div>
+      <div class="key-box placeholder" id="keyBox">Нажмите "Получить ключ" чтобы загрузить последний ключ.</div>
+      <div class="actions">
+        <button class="btn btn-primary" id="fetchBtn" onclick="fetchKey()">Получить ключ</button>
+        <button class="btn btn-copy" id="copyBtn" onclick="copyKey()" disabled>Копировать</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <footer>
+      <p id="footerText">Работает на Deno Deploy · Без VPN и расширений</p>
+    </footer>
+  </div>
+
+  <script>
+    const WORKER_URL = "https://hard-wasp-53.ztsohg.deno.net";
+
+    let currentKey = "";
+    let lang = "ru";
+
+    const i18n = {
+      ru: {
+        subtitle: "Получает последний ключ с vpn-keys.ru",
+        cardLabel: "Последний VLESS ключ",
+        placeholder: 'Нажмите "Получить ключ" чтобы загрузить последний ключ.',
+        fetchBtn: "Получить ключ",
+        fetching: "Загрузка…",
+        loading: "Загрузка…",
+        copyBtn: "Копировать",
+        copied: "Скопировано!",
+        success: "Ключ успешно загружен.",
+        errorNoKey: "Ключ не найден на странице.",
+        errorRetrieve: "Не удалось получить ключ.",
+        footer: "Работает на Deno Deploy · Без VPN и расширений",
+        timeout: "Превышено время ожидания (10с). Сервер недоступен в этой сети — попробуйте другую сеть или VPN.",
+        fetchFail: "Ошибка сети: ",
+        notJson: " — не JSON",
+      },
+      en: {
+        subtitle: "Fetches the latest key from vpn-keys.ru",
+        cardLabel: "Latest VLESS Key",
+        placeholder: 'Press "Fetch Key" to load the latest key.',
+        fetchBtn: "Fetch Key",
+        fetching: "Fetching…",
+        loading: "Loading…",
+        copyBtn: "Copy",
+        copied: "Copied!",
+        success: "Key loaded successfully.",
+        errorNoKey: "No vless:// key found on the page.",
+        errorRetrieve: "Could not retrieve a key.",
+        footer: "Powered by Deno Deploy · No VPN or extensions required",
+        timeout: "Request timed out (10s). Server unreachable on this network — try a different network or VPN.",
+        fetchFail: "Fetch failed: ",
+        notJson: " — not JSON",
+      }
+    };
+
+    function toggleLang() {
+      lang = lang === "ru" ? "en" : "ru";
+      document.getElementById("langRu").className = lang === "ru" ? "lang-active" : "";
+      document.getElementById("langEn").className = lang === "en" ? "lang-active" : "";
+      applyLang();
+    }
+
+    function applyLang() {
+      const t = i18n[lang];
+      document.getElementById("subtitle").textContent = t.subtitle;
+      document.getElementById("cardLabel").textContent = t.cardLabel;
+      document.getElementById("footerText").textContent = t.footer;
+      document.getElementById("fetchBtn").textContent = t.fetchBtn;
+      document.getElementById("copyBtn").textContent = t.copyBtn;
+      // Update placeholder text only if no key is loaded
+      if (!currentKey) {
+        const keyBox = document.getElementById("keyBox");
+        if (keyBox.classList.contains("placeholder")) {
+          keyBox.textContent = t.placeholder;
+        }
+      }
+    }
+
+    // Apply Russian on load
+    applyLang();
+
+    async function fetchKey() {
+      const t = i18n[lang];
+      const keyBox = document.getElementById("keyBox");
+      const fetchBtn = document.getElementById("fetchBtn");
+      const copyBtn = document.getElementById("copyBtn");
+      const status = document.getElementById("status");
+
+      fetchBtn.disabled = true;
+      fetchBtn.textContent = t.fetching;
+      keyBox.className = "key-box placeholder";
+      keyBox.textContent = t.loading;
+      status.textContent = "";
+      status.className = "status";
+      copyBtn.disabled = true;
+      currentKey = "";
+
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+
+        let res;
+        try {
+          res = await fetch(WORKER_URL, { signal: controller.signal });
+        } catch (fetchErr) {
+          const msg = fetchErr.name === "AbortError"
+            ? t.timeout
+            : t.fetchFail + fetchErr.message;
+          keyBox.className = "key-box error-state";
+          keyBox.textContent = msg;
+          setStatus("error", fetchErr.name === "AbortError" ? "Timed out." : fetchErr.message);
+          return;
+        } finally {
+          clearTimeout(timeout);
+        }
+
+        const rawText = await res.text();
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          keyBox.className = "key-box error-state";
+          keyBox.textContent = "API returned (HTTP " + res.status + "):\n\n" + rawText.slice(0, 400);
+          setStatus("error", "HTTP " + res.status + t.notJson);
+          return;
+        }
+
+        if (data.error) {
+          keyBox.className = "key-box error-state";
+          keyBox.textContent = "Error: " + data.error;
+          setStatus("error", t.errorRetrieve);
+        } else {
+          currentKey = data.key;
+          keyBox.className = "key-box";
+          keyBox.textContent = currentKey;
+          copyBtn.disabled = false;
+          setStatus("success", t.success);
+        }
+      } catch (err) {
+        keyBox.className = "key-box error-state";
+        keyBox.textContent = "Unexpected error: " + err.message;
+        setStatus("error", err.message);
+      } finally {
+        fetchBtn.disabled = false;
+        fetchBtn.textContent = t.fetchBtn;
+      }
+    }
+
+    async function copyKey() {
+      if (!currentKey) return;
+      const t = i18n[lang];
+      const copyBtn = document.getElementById("copyBtn");
+      try {
+        await navigator.clipboard.writeText(currentKey);
+        copyBtn.textContent = t.copied;
         copyBtn.classList.add("copied");
         setTimeout(() => {
           copyBtn.textContent = t.copyBtn;
