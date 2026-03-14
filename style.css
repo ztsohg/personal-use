@@ -40,6 +40,7 @@ body::before {
   z-index: 0;
   pointer-events: none;
   background: linear-gradient(120deg, #4f8ef7 0%, #3ecf8e 50%, #0d0d0f 100%);
+  background-size: 200% 200%;
   opacity: 0.18;
   animation: bg-move 12s ease-in-out infinite alternate;
 }
