@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VLESS Key Fetcher</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="Icon.png">
 </head>
 <body>
 
@@ -30,6 +29,7 @@
       <div class="actions">
         <button class="btn btn-primary" id="fetchBtn" onclick="fetchKey()"></button>
         <button class="btn btn-copy" id="copyBtn" onclick="copyKey()" disabled></button>
+        <button class="btn btn-v2ray" id="v2rayBtn" onclick="addV2Ray()" disabled></button>
       </div>
       <div class="status" id="status"></div>
     </div>
@@ -61,6 +61,7 @@
         timeout: "Превышено время ожидания (10с). Сервер недоступен — попробуйте другую сеть или VPN.",
         fetchFail: "Ошибка сети: ",
         notJson: " — не JSON",
+        addKey: "Добавить ключ [v2RayTun]",
       },
       en: {
         title: "VLESS Key Fetcher",
@@ -78,6 +79,7 @@
         timeout: "Request timed out (10s). Server unreachable — try a different network or VPN.",
         fetchFail: "Fetch failed: ",
         notJson: " — not JSON",
+        addKey: "Add Key [v2RayTun]",
       }
     };
 
@@ -119,6 +121,7 @@
       document.getElementById("footerText").textContent = t.footer;
       document.getElementById("fetchBtn").textContent = t.fetchBtn;
       document.getElementById("copyBtn").textContent = t.copyBtn;
+      document.getElementById("v2rayBtn").textContent = t.addKey;
       if (!currentKey) {
         const kb = document.getElementById("keyBox");
         if (kb.classList.contains("placeholder")) kb.textContent = t.placeholder;
@@ -136,6 +139,7 @@
       document.getElementById("footerText").textContent = t.footer;
       document.getElementById("fetchBtn").textContent = t.fetchBtn;
       document.getElementById("copyBtn").textContent = t.copyBtn;
+      document.getElementById("v2rayBtn").textContent = t.addKey;
       document.getElementById("keyBox").textContent = t.placeholder;
       typewrite(document.getElementById("siteTitle"), t.title, 50, () => {
         setTimeout(() => typewrite(document.getElementById("subtitle"), t.subtitle, 22, null, false), 80);
@@ -157,6 +161,7 @@
       status.textContent = "";
       status.className = "status";
       copyBtn.disabled = true;
+      document.getElementById("v2rayBtn").disabled = true;
       currentKey = "";
 
       try {
@@ -194,6 +199,7 @@
           keyBox.className = "key-box";
           typewrite(keyBox, currentKey, 10, () => {
             copyBtn.disabled = false;
+            document.getElementById("v2rayBtn").disabled = false;
             setStatus("success", t.success);
           }, false);
         }
@@ -205,6 +211,13 @@
         fetchBtn.disabled = false;
         fetchBtn.textContent = t.fetchBtn;
       }
+    }
+
+    /* ── v2RayTun ── */
+    function addV2Ray() {
+      if (!currentKey) return;
+      const url = "v2raytun://import/" + encodeURIComponent(currentKey);
+      window.location.href = url;
     }
 
     /* ── Copy ── */

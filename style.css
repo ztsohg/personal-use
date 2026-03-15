@@ -259,3 +259,20 @@ footer {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   color: #fff;
 }
+
+.btn-v2ray {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  border: 1px solid rgba(37,99,235,0.4);
+  box-shadow: 0 4px 14px rgba(37,99,235,0.3), 0 0 0 1px rgba(37,99,235,0.15);
+}
+.btn-v2ray:not(:disabled):hover {
+  box-shadow: 0 6px 22px rgba(37,99,235,0.5), 0 0 0 1px rgba(37,99,235,0.3);
+  transform: translateY(-1px);
+}
+.btn-v2ray:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none !important;
+}
