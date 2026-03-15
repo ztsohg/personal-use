@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VLESS Key Fetcher</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="Icon.png">
 </head>
 <body>
 
@@ -31,6 +30,7 @@
         <button class="btn btn-primary" id="fetchBtn" onclick="fetchKey()"></button>
         <button class="btn btn-copy" id="copyBtn" onclick="copyKey()" disabled></button>
         <button class="btn btn-v2ray" id="v2rayBtn" onclick="addV2Ray()" disabled></button>
+        <button class="btn btn-happ" id="happBtn" onclick="addHapp()" disabled></button>
       </div>
       <div class="status" id="status"></div>
     </div>
@@ -63,6 +63,7 @@
         fetchFail: "Ошибка сети: ",
         notJson: " — не JSON",
         addKey: "Добавить ключ [v2RayTun]",
+        addKeyHapp: "Добавить ключ [Happ]",
       },
       en: {
         title: "VLESS Key Fetcher",
@@ -81,6 +82,7 @@
         fetchFail: "Fetch failed: ",
         notJson: " — not JSON",
         addKey: "Add Key [v2RayTun]",
+        addKeyHapp: "Add Key [Happ]",
       }
     };
 
@@ -123,6 +125,7 @@
       document.getElementById("fetchBtn").textContent = t.fetchBtn;
       document.getElementById("copyBtn").textContent = t.copyBtn;
       document.getElementById("v2rayBtn").textContent = t.addKey;
+      document.getElementById("happBtn").textContent = t.addKeyHapp;
       if (!currentKey) {
         const kb = document.getElementById("keyBox");
         if (kb.classList.contains("placeholder")) kb.textContent = t.placeholder;
@@ -141,6 +144,7 @@
       document.getElementById("fetchBtn").textContent = t.fetchBtn;
       document.getElementById("copyBtn").textContent = t.copyBtn;
       document.getElementById("v2rayBtn").textContent = t.addKey;
+      document.getElementById("happBtn").textContent = t.addKeyHapp;
       document.getElementById("keyBox").textContent = t.placeholder;
       typewrite(document.getElementById("siteTitle"), t.title, 50, () => {
         setTimeout(() => typewrite(document.getElementById("subtitle"), t.subtitle, 22, null, false), 80);
@@ -163,6 +167,7 @@
       status.className = "status";
       copyBtn.disabled = true;
       document.getElementById("v2rayBtn").disabled = true;
+      document.getElementById("happBtn").disabled = true;
       currentKey = "";
 
       try {
@@ -201,6 +206,7 @@
           typewrite(keyBox, currentKey, 10, () => {
             copyBtn.disabled = false;
             document.getElementById("v2rayBtn").disabled = false;
+            document.getElementById("happBtn").disabled = false;
             setStatus("success", t.success);
           }, false);
         }
@@ -219,6 +225,12 @@
       if (!currentKey) return;
       const url = "v2raytun://import/" + currentKey;
       window.location.href = url;
+    }
+
+    /* ── Happ ── */
+    function addHapp() {
+      if (!currentKey) return;
+      window.location.href = "happ://add" + currentKey;
     }
 
     /* ── Copy ── */
