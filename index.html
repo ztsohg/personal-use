@@ -216,7 +216,7 @@
     /* ── v2RayTun ── */
     function addV2Ray() {
       if (!currentKey) return;
-      const url = "v2raytun://import/" + encodeURIComponent(currentKey);
+      const url = "v2raytun://import/" + currentKey;
       window.location.href = url;
     }
 
