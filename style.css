@@ -175,7 +175,7 @@ header h1 {
 
 .btn-primary {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
-  color: #fff;
+  color: #8a8a8a;
   box-shadow: 0 4px 18px rgba(91,143,255,0.3), 0 0 0 1px rgba(91,143,255,0.15);
 }
 .btn-primary:not(:disabled):hover {
